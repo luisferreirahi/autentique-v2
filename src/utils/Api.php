@@ -79,23 +79,30 @@ class Api
     {
         $curl = curl_init();
 
+        $payload_curl =  [
+            CURLOPT_URL => $this->url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => "",
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 60,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => "POST",
+            CURLOPT_POSTFIELDS => $fields,
+            CURLOPT_HTTPHEADER => $httpHeader
+        ];
+
+        if (ini_get('curl.cainfo') === false || ini_get('openssl.cafile') === false) {
+
+            $env_cafile = getenv('AUTENTIQUE_CACERT_FILE') && file_exists(getenv('AUTENTIQUE_CACERT_FILE')) ? getenv('AUTENTIQUE_CACERT_FILE') : null;
+
+            $payload_curl[CURLOPT_CAINFO] = $env_cafile ?? __DIR__ . "/../../ssl/ca-bundle.crt";
+        }
+
         curl_setopt_array(
             /** @scrutinizer ignore-type */
             $curl,
-            [
-                CURLOPT_URL => $this->url,
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_ENCODING => "",
-                CURLOPT_MAXREDIRS => 10,
-                CURLOPT_CONNECTTIMEOUT => $this->timeout,
-                CURLOPT_TIMEOUT => $this->timeout,
-                CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-                CURLOPT_CUSTOMREQUEST => "POST",
-                CURLOPT_POSTFIELDS => $fields,
-                CURLOPT_HTTPHEADER => $httpHeader,
-                CURLOPT_CAINFO => __DIR__ . "/../../ssl/ca-bundle.crt",
-            ]
+            $payload_curl
         );
 
         $response = $this->executeCurl($curl);
